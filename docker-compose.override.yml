@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+
+  app-server:
+    build:
+      context: ./services/app-server
+      dockerfile: Dockerfile.dev
+    container_name: prosper-app-server
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./services/app-server/src:/app/src
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - prosper-net
+
+  react-ui:
+    build:
+      context: ./services/react-ui
+      dockerfile: Dockerfile.dev
+    container_name: prosper-ui
+    restart: unless-stopped
+    volumes:
+      - ./services/react-ui/src:/app/src
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost/api
+      - VITE_WS_URL=ws://localhost/ws
+    networks:
+      - prosper-net
