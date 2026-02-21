@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import Login from './Login'
 import AlertPanel from './AlertPanel'
+import TeacherView from './TeacherView'
+import DirectorView from './DirectorView'
 
 function SignalBars({ rssi }) {
   const strength = rssi >= -50 ? 4 : rssi >= -65 ? 3 : rssi >= -75 ? 2 : 1
@@ -87,13 +89,13 @@ function StudentCard({ student }) {
 }
 
 export default function App() {
-  const [user,      setUser]      = useState(() => JSON.parse(localStorage.getItem('prosper_user') || 'null'))
-  const [token,     setToken]     = useState(() => localStorage.getItem('prosper_token') || '')
-  const [students,  setStudents]  = useState([])
-  const [wsStatus,  setWsStatus]  = useState('disconnected')
-  const [lastUpdate,setLastUpdate] = useState(null)
-  const [alerts, setAlerts] = useState([])
-  const wsRef                     = useRef(null)
+  const [user,       setUser]       = useState(() => JSON.parse(localStorage.getItem('prosper_user') || 'null'))
+  const [token,      setToken]      = useState(() => localStorage.getItem('prosper_token') || '')
+  const [students,   setStudents]   = useState([])
+  const [alerts,     setAlerts]     = useState([])
+  const [wsStatus,   setWsStatus]   = useState('disconnected')
+  const [lastUpdate, setLastUpdate] = useState(null)
+  const wsRef                       = useRef(null)
 
   function handleLogin(u, t) { setUser(u); setToken(t) }
 
@@ -101,10 +103,9 @@ export default function App() {
     localStorage.removeItem('prosper_token')
     localStorage.removeItem('prosper_user')
     if (wsRef.current) wsRef.current.close()
-    setUser(null); setToken(''); setStudents([])
+    setUser(null); setToken(''); setStudents([]); setAlerts([])
   }
 
-  // Load initial data via REST then switch to WebSocket
   async function loadInitial(tok) {
     try {
       const res  = await fetch('/api/presence/live', {
@@ -119,52 +120,24 @@ export default function App() {
     }
   }
 
-  // Connect WebSocket
   useEffect(() => {
     if (!token || !user) return
-
     loadInitial(token)
-
     const wsUrl = `ws://${window.location.host}/ws?token=${token}`
     const ws    = new WebSocket(wsUrl)
     wsRef.current = ws
-
-    ws.onopen = () => {
-      console.log('✅ WebSocket connected')
-      setWsStatus('connected')
-    }
-
+    ws.onopen    = () => setWsStatus('connected')
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data)
-        if (msg.type === 'PRESENCE_UPDATE') {
-          setStudents(msg.data)
-          setLastUpdate(new Date())
-        }
-        if (msg.type === 'ALERT_FIRED') {
-          setAlerts(prev => [msg.data, ...prev.filter(a => a.id !== msg.data.id)])
-        }
-        if (msg.type === 'ALERT_RESOLVED') {
-          setAlerts(prev => prev.filter(a => a.type !== msg.data.type))
-        }
-        if (msg.type === 'GATEWAY_HEARTBEAT') {
-          setWsStatus('connected')
-        }
-      } catch (err) {
-        console.error('WS message error:', err)
-      }
+        if (msg.type === 'PRESENCE_UPDATE') { setStudents(msg.data); setLastUpdate(new Date()) }
+        if (msg.type === 'ALERT_FIRED')     { setAlerts(prev => [msg.data, ...prev.filter(a => a.id !== msg.data.id)]) }
+        if (msg.type === 'ALERT_RESOLVED')  { setAlerts(prev => prev.filter(a => a.type !== msg.data.type)) }
+        if (msg.type === 'GATEWAY_HEARTBEAT') { setWsStatus('connected') }
+      } catch (err) { console.error('WS error:', err) }
     }
-
-    ws.onclose = () => {
-      console.log('WS disconnected — reconnecting in 3s')
-      setWsStatus('disconnected')
-      setTimeout(() => {
-        if (token) loadInitial(token)
-      }, 3000)
-    }
-
+    ws.onclose = () => { setWsStatus('disconnected'); setTimeout(() => loadInitial(token), 3000) }
     ws.onerror = () => setWsStatus('error')
-
     return () => ws.close()
   }, [token])
 
@@ -174,6 +147,8 @@ export default function App() {
   const probable = students.filter(s => s.presence_state === 'PROBABLE').length
   const missing  = students.filter(s => s.presence_state === 'MISSING').length
   const wsColor  = wsStatus === 'connected' ? '#44CF6C' : wsStatus === 'error' ? '#DC3545' : '#FFC107'
+
+  const onAck = (id) => setAlerts(prev => prev.filter(a => a.id !== id))
 
   return (
     <div style={{ minHeight: '100vh', background: '#0F1117', color: '#E4E4E7', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
@@ -192,12 +167,12 @@ export default function App() {
           }}>🏫</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 18 }}>Prosper RFID Platform</div>
-            <div style={{ fontSize: 11, color: '#71717A' }}>Live Presence · Classroom A</div>
+            <div style={{ fontSize: 11, color: '#71717A' }}>
+              Live Presence · Classroom A
+            </div>
           </div>
         </div>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* WebSocket status */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{
               width: 8, height: 8, borderRadius: '50%',
@@ -205,7 +180,7 @@ export default function App() {
               animation: wsStatus === 'connected' ? 'pulse 2s infinite' : 'none'
             }}/>
             <span style={{ fontSize: 12, color: '#71717A' }}>
-              {wsStatus === 'connected' ? 'Live' : wsStatus === 'error' ? 'Error' : 'Reconnecting...'}
+              {wsStatus === 'connected' ? 'Live' : 'Reconnecting...'}
             </span>
             {lastUpdate && (
               <span style={{ fontSize: 11, color: '#52525B', marginLeft: 4 }}>
@@ -213,12 +188,9 @@ export default function App() {
               </span>
             )}
           </div>
-
-          {/* User info */}
           <div style={{ fontSize: 12, color: '#71717A', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: 16 }}>
             👤 {user.username} <span style={{ color: '#4ECDC4' }}>({user.role})</span>
           </div>
-
           <button onClick={handleLogout} style={{
             background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: 8, padding: '6px 14px', color: '#71717A',
@@ -227,39 +199,41 @@ export default function App() {
         </div>
       </header>
 
-      {/* Summary bar */}
-      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        {[
-          { label: 'Present',  count: present,         color: '#44CF6C' },
-          { label: 'Probable', count: probable,        color: '#FFC107' },
-          { label: 'Missing',  count: missing,         color: '#DC3545' },
-          { label: 'Total',    count: students.length, color: '#4ECDC4' },
-        ].map(s => (
-          <div key={s.label} style={{
-            flex: 1, padding: '12px 24px', textAlign: 'center',
-            borderRight: '1px solid rgba(255,255,255,0.06)'
-          }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.count}</div>
-            <div style={{ fontSize: 11, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
+      {user.role === 'TEACHER' && (
+        <TeacherView students={students} alerts={alerts} onAck={onAck} token={token} />
+      )}
 
-      <AlertPanel alerts={alerts} onAck={(id) => setAlerts(prev => prev.filter(a => a.id !== id))} token={token} />
-      {/* Student grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-        gap: 16, padding: 24
-      }}>
-        {students.map(s => <StudentCard key={s.mac_address} student={s} />)}
-        {students.length === 0 && (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 60, color: '#52525B' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📡</div>
-            <div style={{ fontSize: 18 }}>Connecting to live feed...</div>
+      {user.role === 'DIRECTOR' && (
+        <DirectorView students={students} alerts={alerts} onAck={onAck} token={token} gatewayOk={wsStatus === 'connected'} />
+      )}
+
+      {user.role === 'IT' && (
+        <div>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            {[
+              { label: 'Present',  count: present,         color: '#44CF6C' },
+              { label: 'Probable', count: probable,        color: '#FFC107' },
+              { label: 'Missing',  count: missing,         color: '#DC3545' },
+              { label: 'Total',    count: students.length, color: '#4ECDC4' },
+            ].map(s => (
+              <div key={s.label} style={{
+                flex: 1, padding: '12px 24px', textAlign: 'center',
+                borderRight: '1px solid rgba(255,255,255,0.06)'
+              }}>
+                <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.count}</div>
+                <div style={{ fontSize: 11, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+          <div style={{ padding: '16px 24px 0' }}>
+            <AlertPanel alerts={alerts} onAck={onAck} token={token} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16, padding: 24 }}>
+            {students.map(s => <StudentCard key={s.mac_address} student={s} />)}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
