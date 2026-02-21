@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import AlertPanel from './AlertPanel'
+import BatchWorkflow from './BatchWorkflow'
 
 function SignalBars({ rssi }) {
   const strength = rssi >= -50 ? 4 : rssi >= -65 ? 3 : rssi >= -75 ? 2 : 1
@@ -17,17 +19,20 @@ function SignalBars({ rssi }) {
 }
 
 export default function TeacherView({ students, alerts, onAck, token }) {
-  const present  = students.filter(s => s.presence_state === 'PRESENT').length
-  const missing  = students.filter(s => s.presence_state === 'MISSING').length
+  const [showBatch, setShowBatch] = useState(false)
+  const present = students.filter(s => s.presence_state === 'PRESENT').length
+  const missing = students.filter(s => s.presence_state === 'MISSING').length
 
   return (
     <div>
+      {showBatch && <BatchWorkflow token={token} onClose={() => setShowBatch(false)} />}
+
       {/* Summary */}
       <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         {[
-          { label: 'Present',  count: present,         color: '#44CF6C' },
-          { label: 'Missing',  count: missing,         color: '#DC3545' },
-          { label: 'Total',    count: students.length, color: '#4ECDC4' },
+          { label: 'Present', count: present,         color: '#44CF6C' },
+          { label: 'Missing', count: missing,         color: '#DC3545' },
+          { label: 'Total',   count: students.length, color: '#4ECDC4' },
         ].map(s => (
           <div key={s.label} style={{
             flex: 1, padding: '12px 24px', textAlign: 'center',
@@ -37,6 +42,15 @@ export default function TeacherView({ students, alerts, onAck, token }) {
             <div style={{ fontSize: 11, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
           </div>
         ))}
+        {/* Activate Cards button */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px' }}>
+          <button onClick={() => setShowBatch(true)} style={{
+            background: 'linear-gradient(135deg, #4ECDC4, #44CF6C)',
+            border: 'none', borderRadius: 10, padding: '10px 20px',
+            color: '#0F1117', fontWeight: 700, cursor: 'pointer', fontSize: 13,
+            whiteSpace: 'nowrap'
+          }}>🏷️ Activate Cards</button>
+        </div>
       </div>
 
       {/* Alerts */}
@@ -44,7 +58,7 @@ export default function TeacherView({ students, alerts, onAck, token }) {
         <AlertPanel alerts={alerts} onAck={onAck} token={token} />
       </div>
 
-      {/* Student list — simple table for teacher */}
+      {/* Student table */}
       <div style={{ padding: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>

@@ -114,3 +114,7 @@ app.post('/api/alerts/:id/ack', requireAuth, async (req, res) => {
   `, [req.params.id, req.user.id]);
   res.json({ success: true });
 });
+
+// ── SESSIONS & BATCH WORKFLOW ─────────────────────────
+const sessionsRouter = require('./sessions');
+app.use('/api/sessions', requireAuth, sessionsRouter);
