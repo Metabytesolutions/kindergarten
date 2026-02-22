@@ -140,3 +140,6 @@ app.use('/api/events', requireAuth, directorEventsRouter);
 
 const directorApiRouter = require('./directorApi');
 app.use('/api/director', requireAuth, directorApiRouter);
+
+const teacherSessionRouter = require('./teacherSessionApi');
+app.use('/api/session', requireAuth, teacherSessionRouter);

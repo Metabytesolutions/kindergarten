@@ -206,7 +206,7 @@ export default function App() {
         </div>
       </header>
 
-      {user.role === 'TEACHER' && (
+      {user.role === 'TEACHER' ? <TeacherView token={token}/> : role === '__TEACHER_OLD' && (
         <TeacherView students={students} alerts={alerts} onAck={onAck} token={token} />
       )}
 
