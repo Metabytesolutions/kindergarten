@@ -1,3 +1,4 @@
+import RawDetectionMonitor from './RawDetectionMonitor';
 import TagInventory from './TagInventory';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -350,6 +351,7 @@ export default function DirectorPortal({token}){
     {id:'classrooms',label:'👩‍🏫 Classrooms'},
     {id:'transfers', label:`🔗 Transfers${transfers.length>0?` (${transfers.length})`:''}`},
     {id:'tags', label:'🏷️ Tag Inventory'},
+    {id:'detections', label:'📡 Live Detections'},
   ];
 
   return <div>
@@ -490,6 +492,9 @@ export default function DirectorPortal({token}){
 
     {/* TAGS TAB */}
     {!loading&&view==='tags'&&<TagInventory token={token}/>}
+
+    {/* DETECTIONS TAB */}
+    {!loading&&view==='detections'&&<RawDetectionMonitor token={token}/>}
 
     {/* TRANSFERS TAB */}
     {!loading&&view==='transfers'&&<div>

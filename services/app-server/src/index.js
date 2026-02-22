@@ -146,3 +146,6 @@ app.use('/api/session', requireAuth, teacherSessionRouter);
 
 const tagInventoryRouter = require('./tagInventoryApi');
 app.use('/api/tags', requireAuth, tagInventoryRouter);
+
+const rawDetectionRouter = require('./rawDetectionApi');
+app.use('/api/raw', requireAuth, rawDetectionRouter);
