@@ -7,6 +7,7 @@ import GatewayManager from './GatewayManager'
 import ZoneManager from './ZoneManager'
 import UserManager from './UserManager'
 import StudentManager from './StudentManager'
+import CustodyManager from './CustodyManager'
 
 function SignalBars({ rssi }) {
   const strength = rssi >= -50 ? 4 : rssi >= -65 ? 3 : rssi >= -75 ? 2 : 1
@@ -215,7 +216,7 @@ export default function App() {
       {user.role === 'IT' && (
         <div>
           <div style={{ display:'flex', gap:0, borderBottom:'1px solid rgba(255,255,255,0.06)', padding:'0 24px' }}>
-            {[{id:'dashboard',label:'📊 Dashboard'},{id:'gateways',label:'📡 Gateways'},{id:'zones',label:'🏫 Zones'},{id:'users',label:'👥 Users'},{id:'students',label:'👶 Students'}].map(t=>(
+            {[{id:'dashboard',label:'📊 Dashboard'},{id:'gateways',label:'📡 Gateways'},{id:'zones',label:'🏫 Zones'},{id:'users',label:'👥 Users'},{id:'students',label:'👶 Students'},{id:'custody',label:'🔗 Custody'}].map(t=>(
               <div key={t.id} onClick={()=>setItTab(t.id)} style={{
                 padding:'12px 20px', cursor:'pointer', fontSize:13, fontWeight:700,
                 color: itTab===t.id ? '#2E86AB' : '#8899AA',
@@ -228,6 +229,7 @@ export default function App() {
           {itTab==='zones' && <div style={{padding:24}}><ZoneManager token={token}/></div>}
           {itTab==='users' && <div style={{padding:24}}><UserManager token={token}/></div>}
           {itTab==='students' && <div style={{padding:24}}><StudentManager token={token}/></div>}
+          {itTab==='custody' && <div style={{padding:24}}><CustodyManager token={token}/></div>}
           {itTab==='dashboard' && <div>
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             {[
