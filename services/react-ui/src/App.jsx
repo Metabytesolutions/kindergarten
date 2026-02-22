@@ -3,6 +3,7 @@ import Login from './Login'
 import AlertPanel from './AlertPanel'
 import TeacherView from './TeacherView'
 import DirectorView from './DirectorView'
+import GatewayManager from './GatewayManager'
 
 function SignalBars({ rssi }) {
   const strength = rssi >= -50 ? 4 : rssi >= -65 ? 3 : rssi >= -75 ? 2 : 1
@@ -95,6 +96,7 @@ export default function App() {
   const [alerts,     setAlerts]     = useState([])
   const [wsStatus,   setWsStatus]   = useState('disconnected')
   const [lastUpdate, setLastUpdate] = useState(null)
+  const [itTab, setItTab] = useState('dashboard')
   const wsRef                       = useRef(null)
 
   function handleLogin(u, t) { setUser(u); setToken(t) }
@@ -209,6 +211,18 @@ export default function App() {
 
       {user.role === 'IT' && (
         <div>
+          <div style={{ display:'flex', gap:0, borderBottom:'1px solid rgba(255,255,255,0.06)', padding:'0 24px' }}>
+            {[{id:'dashboard',label:'📊 Dashboard'},{id:'gateways',label:'📡 Gateways'}].map(t=>(
+              <div key={t.id} onClick={()=>setItTab(t.id)} style={{
+                padding:'12px 20px', cursor:'pointer', fontSize:13, fontWeight:700,
+                color: itTab===t.id ? '#2E86AB' : '#8899AA',
+                borderBottom: itTab===t.id ? '2px solid #2E86AB' : '2px solid transparent',
+                transition:'all 0.15s',
+              }}>{t.label}</div>
+            ))}
+          </div>
+          {itTab==='gateways' && <div style={{padding:24}}><GatewayManager token={token}/></div>}
+          {itTab==='dashboard' && <div>
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             {[
               { label: 'Present',  count: present,         color: '#44CF6C' },
@@ -231,6 +245,7 @@ export default function App() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16, padding: 24 }}>
             {students.map(s => <StudentCard key={s.mac_address} student={s} />)}
           </div>
+          </div>}
         </div>
       )}
 

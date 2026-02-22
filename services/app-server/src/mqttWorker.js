@@ -1,4 +1,6 @@
 const mqtt = require('mqtt');
+
+let mqttClient = null;
 const db   = require('./db');
 let ws;
 
@@ -9,18 +11,18 @@ const TOPIC_PUBACTION = 'kbeacon/pubaction/#';
 function start(wsModule) {
   ws = wsModule;
 
-  const client = mqtt.connect(BROKER_URL, {
+  mqttClient = mqtt.connect(BROKER_URL, {
     clientId: `prosper_ingestion_${Date.now()}`,
     clean: true,
     reconnectPeriod: 5000,
   });
 
-  client.on('connect', () => {
+  mqttClient.on('connect', () => {
     console.log('✅ MQTT ingestion worker connected');
-    client.subscribe([TOPIC_PUBLISH, TOPIC_PUBACTION], { qos: 0 });
+    mqttClient.subscribe([TOPIC_PUBLISH, TOPIC_PUBACTION], { qos: 0 });
   });
 
-  client.on('message', async (topic, message) => {
+  mqttClient.on('message', async (topic, message) => {
     try {
       const payload = JSON.parse(message.toString());
       if (topic.startsWith('kbeacon/publish/'))   await handleDetection(topic, payload);
@@ -30,8 +32,8 @@ function start(wsModule) {
     }
   });
 
-  client.on('error',     (err) => console.error('MQTT error:', err.message));
-  client.on('reconnect', ()    => console.log('🔄 MQTT reconnecting...'));
+  mqttClient.on('error',     (err) => console.error('MQTT error:', err.message));
+  mqttClient.on('reconnect', ()    => console.log('🔄 MQTT reconnecting...'));
 }
 
 async function handleDetection(topic, payload) {
@@ -136,4 +138,20 @@ async function ensureTag(mac) {
   `, [mac.toUpperCase()]);
 }
 
-module.exports = { start };
+
+
+// ── PUBLISH TO GATEWAY ────────────────────────────────────────────────────────
+function publishToGateway(topic, payload) {
+  if (!mqttClient || !mqttClient.connected) {
+    console.error('❌ MQTT client not connected — cannot publish');
+    return false;
+  }
+  const msg = typeof payload === 'string' ? payload : JSON.stringify(payload);
+  mqttClient.publish(topic, msg, { qos: 1 }, (err) => {
+    if (err) console.error(`❌ Publish error to ${topic}:`, err.message);
+    else     console.log(`📤 Published to ${topic}:`, msg.slice(0, 120));
+  });
+  return true;
+}
+
+module.exports = { start, publishToGateway };

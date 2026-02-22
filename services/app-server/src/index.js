@@ -118,3 +118,7 @@ app.post('/api/alerts/:id/ack', requireAuth, async (req, res) => {
 // ── SESSIONS & BATCH WORKFLOW ─────────────────────────
 const sessionsRouter = require('./sessions');
 app.use('/api/sessions', requireAuth, sessionsRouter);
+
+// ── ADMIN GATEWAY MANAGEMENT ──────────────────────────────────────────────
+const adminGatewaysRouter = require('./adminGateways');
+app.use('/api/admin/gateways', requireAuth, adminGatewaysRouter);
