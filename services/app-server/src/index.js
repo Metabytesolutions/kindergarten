@@ -134,3 +134,6 @@ app.use('/api/admin/students', requireAuth, adminStudentsRouter);
 
 const custodyRouter = require('./adminCustody');
 app.use('/api/custody', requireAuth, custodyRouter);
+
+const directorEventsRouter = require('./directorEvents');
+app.use('/api/events', requireAuth, directorEventsRouter);

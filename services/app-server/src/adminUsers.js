@@ -1,3 +1,4 @@
+const { logEvent } = require('./eventLogger');
 const express = require('express');
 const db      = require('./db');
 const bcrypt  = require('bcrypt');
@@ -36,6 +37,13 @@ router.post('/', async (req, res) => {
       [req.user.id, req.user.role, r.rows[0].id]);
     console.log(`✅ User created: ${username} (${role})`);
     res.json(r.rows[0]);
+    // Log event (fire and forget)
+    logEvent('USER_CREATED', {
+      title: `New user created: ${r.rows[0].username} (${r.rows[0].role})`,
+      detail: { username: r.rows[0].username, role: r.rows[0].role,
+                created_by: req.user?.username },
+      actorId: req.user?.id,
+    }).catch(()=>{});
   } catch(e) {
     if (e.code === '23505') return res.status(400).json({ error: 'Username or email already exists' });
     res.status(500).json({ error: e.message });
@@ -45,7 +53,7 @@ router.post('/', async (req, res) => {
 // PUT /api/admin/users/:id
 router.put('/:id', async (req, res) => {
   try {
-    const { full_name, email, phone, role, zone_id, primary_zone_id, is_active } = req.body;
+    const { full_name, email, phone, role, zone_id, primary_zone_id, teacher_type, is_active } = req.body;
     const r = await db.query(
       `UPDATE users SET full_name=COALESCE($2,full_name), email=COALESCE($3,email),
        phone=$4, role=COALESCE($5,role), zone_id=COALESCE($6,zone_id), primary_zone_id=COALESCE($6,zone_id),

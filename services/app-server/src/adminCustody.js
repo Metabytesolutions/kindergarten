@@ -1,3 +1,4 @@
+const { logEvent } = require('./eventLogger');
 const express = require('express');
 const db      = require('./db');
 const router  = express.Router();
@@ -134,6 +135,16 @@ router.post('/transfer', async (req, res) => {
     }
 
     console.log(`📤 Transfer initiated: ${student_ids.length} students → teacher ${to_teacher_id}`);
+    // Log director event
+    const toTeacher = await db.query('SELECT full_name,username FROM users WHERE id=$1',[to_teacher_id]);
+    const toZone    = await db.query('SELECT name FROM zones WHERE id=$1',[to_zone_id]);
+    await logEvent('CUSTODY_TRANSFER_INITIATED', {
+      title: `Custody transfer initiated → ${toTeacher.rows[0]?.full_name||'Unknown'} (${toZone.rows[0]?.name||'Unknown zone'})`,
+      detail: { to_teacher_id, to_zone_id, student_count: student_ids.length, notes,
+                to_teacher_name: toTeacher.rows[0]?.full_name,
+                to_zone_name: toZone.rows[0]?.name },
+      studentIds: student_ids, actorId: req.user.id, zoneId: to_zone_id,
+    });
     res.json({ success:true, transfer_group:groupId, count:transfers.length, transfers });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -169,6 +180,14 @@ router.post('/transfer/:group/accept', async (req, res) => {
     }
 
     console.log(`✅ Custody accepted: group ${req.params.group} (${pending.rows.length} students)`);
+    await logEvent('CUSTODY_TRANSFER_ACCEPTED', {
+      title: `Custody accepted by ${req.user.full_name||req.user.username} (${pending.rows.length} student${pending.rows.length!==1?'s':''})`,
+      detail: { transfer_group: req.params.group, accepted_count: pending.rows.length,
+                accepted_by: req.user.username },
+      studentIds: pending.rows.map(r=>r.student_id),
+      actorId: req.user.id,
+      zoneId: pending.rows[0]?.to_zone_id,
+    });
     res.json({ success:true, accepted: pending.rows.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -183,6 +202,13 @@ router.post('/transfer/:group/reject', async (req, res) => {
     `, [req.params.group, req.user.id]);
 
     console.log(`❌ Custody rejected: group ${req.params.group}`);
+    await logEvent('CUSTODY_TRANSFER_REJECTED', {
+      title: `Custody transfer REJECTED by ${req.user.full_name||req.user.username}`,
+      detail: { transfer_group: req.params.group, rejected_by: req.user.username,
+                rejected_count: r.rows.length },
+      studentIds: r.rows.map(x=>x.student_id),
+      actorId: req.user.id,
+    });
     res.json({ success:true, rejected: r.rows.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -310,6 +336,14 @@ router.post('/temp-zone', async (req, res) => {
        JSON.stringify({zone_id, zone_role, notes})]);
 
     console.log(`🔄 Temp zone assigned: teacher=${tr.rows[0].username} zone=${zone_id}`);
+    const tzInfo = await db.query('SELECT name FROM zones WHERE id=$1',[zone_id]);
+    await logEvent('TEMP_ZONE_ASSIGNED', {
+      title: `Temp zone assigned: ${tr.rows[0].full_name||tr.rows[0].username} → ${tzInfo.rows[0]?.name||zone_id}`,
+      detail: { teacher_id, zone_id, zone_role, notes,
+                teacher_name: tr.rows[0].full_name||tr.rows[0].username,
+                zone_name: tzInfo.rows[0]?.name, assigned_by: req.user.username },
+      actorId: req.user.id, zoneId: zone_id,
+    });
     res.json({ success: true, teacher: tr.rows[0] });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

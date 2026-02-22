@@ -16,6 +16,7 @@ function UserForm({token,user,onSaved,onCancel}){
   const [phone,setPhone]=useState(user?.phone||'');
   const [role,setRole]=useState(user?.role||'TEACHER');
   const [zoneId,setZoneId]=useState(user?.zone_id||'');
+  const [teacherType,setTeacherType]=useState(user?.teacher_type||'PERMANENT');
   const [password,setPassword]=useState('');
   const [zones,setZones]=useState([]);
   const [saving,setSaving]=useState(false);
@@ -28,8 +29,8 @@ function UserForm({token,user,onSaved,onCancel}){
     setSaving(true);setErr('');
     try{
       const body=isEdit
-        ?{full_name:fullName,email,phone,role,zone_id:zoneId||null}
-        :{username,email,password,role,full_name:fullName,phone,zone_id:zoneId||null};
+        ?{full_name:fullName,email,phone,role,zone_id:zoneId||null,teacher_type:role==='TEACHER'?teacherType:null}
+        :{username,email,password,role,full_name:fullName,phone,zone_id:zoneId||null,teacher_type:role==='TEACHER'?teacherType:'PERMANENT'};
       const r=await fetch(isEdit?`${API}/${user.id}`:API,{method:isEdit?'PUT':'POST',headers:auth(token),body:JSON.stringify(body)});
       const d=await r.json();
       if(!r.ok)throw new Error(d.error);

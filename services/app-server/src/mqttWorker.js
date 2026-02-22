@@ -1,3 +1,4 @@
+const { logEvent } = require('./eventLogger');
 const mqtt = require('mqtt');
 
 let mqttClient = null;
