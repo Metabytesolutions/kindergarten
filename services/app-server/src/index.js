@@ -125,3 +125,9 @@ app.use('/api/admin/gateways', requireAuth, adminGatewaysRouter);
 
 const adminZonesRouter = require('./adminZones');
 app.use('/api/admin/zones', requireAuth, adminZonesRouter);
+
+const adminUsersRouter = require('./adminUsers');
+app.use('/api/admin/users', requireAuth, adminUsersRouter);
+
+const adminStudentsRouter = require('./adminStudents');
+app.use('/api/admin/students', requireAuth, adminStudentsRouter);

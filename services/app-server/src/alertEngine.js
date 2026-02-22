@@ -112,3 +112,48 @@ async function resolveAlert(type, student_id, gateway_id) {
 }
 
 module.exports = { start };
+
+
+// ── Zone-aware presence evaluation ──────────────────────────────────────────
+// Called by mqttWorker when a detection arrives
+// Returns: { state, alertType, alertSeverity } or null
+async function evaluateZonePresence(db, studentId, detectedZoneId) {
+  try {
+    // Get student primary zone
+    const sr = await db.query(
+      'SELECT zone_id FROM students WHERE id=$1', [studentId]);
+    if (!sr.rows[0]) return null;
+    const primaryZoneId = sr.rows[0].zone_id;
+
+    // Get detected zone type
+    const zr = await db.query(
+      'SELECT zone_type FROM zones WHERE id=$1', [detectedZoneId]);
+    const zoneType = zr.rows[0]?.zone_type;
+
+    // Rule 1: EXIT zone type → always CRITICAL
+    if (zoneType === 'EXIT') {
+      return { state:'EXIT_CONFIRMED', alertType:'EXIT_VIOLATION', severity:'CRITICAL' };
+    }
+
+    // Rule 2: Primary classroom → PRESENT
+    if (detectedZoneId === primaryZoneId) {
+      return { state:'CONFIRMED_PRESENT', alertType:null, severity:null };
+    }
+
+    // Rule 3: Check permitted zones
+    const pr = await db.query(
+      'SELECT 1 FROM student_permitted_zones WHERE student_id=$1 AND zone_id=$2',
+      [studentId, detectedZoneId]);
+    if (pr.rows.length > 0) {
+      return { state:'ROAMING', alertType:null, severity:null };
+    }
+
+    // Rule 4: Unknown zone → ZONE_VIOLATION
+    return { state:'TRANSITIONING', alertType:'ZONE_VIOLATION', severity:'WARNING' };
+  } catch(e) {
+    console.error('evaluateZonePresence error:', e.message);
+    return null;
+  }
+}
+
+module.exports.evaluateZonePresence = evaluateZonePresence;

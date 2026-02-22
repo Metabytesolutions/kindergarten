@@ -5,6 +5,7 @@ export default function DirectorView({ students, alerts, onAck, token, gatewayOk
   const probable = students.filter(s => s.presence_state === 'PROBABLE').length
   const missing  = students.filter(s => s.presence_state === 'MISSING').length
 
+  const [directorTab, setDirectorTab] = React.useState('overview');
   return (
     <div>
       {/* Summary */}
