@@ -87,10 +87,40 @@ function Wizard({token,onDone,onCancel}){
 }
 
 function EditPanel({gw,token,onSaved}){
-  const [label,setLabel]=useState(gw.label);const [rssi,setRssi]=useState(String(gw.rssi_threshold||-70));const [zoneId,setZoneId]=useState(gw.zone_id||'');const [zones,setZones]=useState([]);const [saving,setSaving]=useState(false);const [msg,setMsg]=useState('');
+  const [label,setLabel]=useState(gw.label||'');
+  const [rssi,setRssi]=useState(String(gw.rssi_threshold||-70));
+  const [zoneId,setZoneId]=useState(gw.zone_id||'');
+  const [shortId,setShortId]=useState(gw.short_id||'');
+  const [ip,setIp]=useState(gw.ip_address||'');
+  const [zones,setZones]=useState([]);
+  const [saving,setSaving]=useState(false);
+  const [msg,setMsg]=useState('');
   useEffect(()=>{fetch(`${API}/zones`,{headers:auth(token)}).then(r=>r.json()).then(setZones).catch(()=>{});},[]);
-  const save=async()=>{setSaving(true);try{const r=await fetch(`${API}/${gw.id}`,{method:'PUT',headers:auth(token),body:JSON.stringify({label,zone_id:zoneId||null,rssi_threshold:parseInt(rssi)})});if(r.ok){setMsg('✓ Saved');setTimeout(onSaved,800);}else{const d=await r.json();setMsg('Error:'+d.error);}}finally{setSaving(false);}};
-  return <div style={{marginTop:16,borderTop:`1px solid ${C.border}`,paddingTop:16}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}><Fld label="Label" value={label} onChange={setLabel} placeholder="Classroom Gateway"/><Sel label="Zone" value={zoneId} onChange={setZoneId} options={zones.map(z=>({value:z.id,label:z.name}))}/><Sel label="RSSI" value={rssi} onChange={setRssi} options={[{value:'-60',label:'-60 dBm'},{value:'-70',label:'-70 dBm'},{value:'-75',label:'-75 dBm'},{value:'-80',label:'-80 dBm'}]}/></div><div style={{display:'flex',gap:10,alignItems:'center'}}><Btn onClick={save} disabled={saving} color={C.green} small>{saving?'⏳':'✓ Save'}</Btn>{msg&&<span style={{fontSize:12,color:msg.startsWith('✓')?C.green:C.red}}>{msg}</span>}</div></div>;
+  const save=async()=>{
+    setSaving(true);
+    try{
+      const r=await fetch(`${API}/${gw.id}`,{method:'PUT',headers:auth(token),
+        body:JSON.stringify({label,zone_id:zoneId||null,rssi_threshold:parseInt(rssi),short_id:shortId||null,ip_address:ip||null})});
+      if(r.ok){setMsg('✓ Saved');setTimeout(()=>{onSaved();},600);}
+      else{const d=await r.json();setMsg('Error:'+d.error);}
+    }finally{setSaving(false);}
+  };
+  return <div style={{marginTop:16,borderTop:`1px solid ${C.border}`,paddingTop:16}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+      <Fld label="Label" value={label} onChange={setLabel} placeholder="Classroom Gateway"/>
+      <Fld label="Short ID" value={shortId} onChange={v=>setShortId(v.toUpperCase())} placeholder="DCF160" mono/>
+      <Fld label="IP Address" value={ip} onChange={setIp} placeholder="192.168.5.66" mono/>
+      <Sel label="Zone" value={zoneId} onChange={setZoneId} options={zones.map(z=>({value:z.id,label:z.name}))}/>
+      <Sel label="RSSI Threshold" value={rssi} onChange={setRssi} options={[
+        {value:'-60',label:'-60 dBm (tight)'},{value:'-70',label:'-70 dBm (standard)'},
+        {value:'-75',label:'-75 dBm (large)'},{value:'-80',label:'-80 dBm (max)'},
+      ]}/>
+    </div>
+    <div style={{display:'flex',gap:10,alignItems:'center'}}>
+      <Btn onClick={save} disabled={saving} color={C.green} small>{saving?'⏳ Saving...':'✓ Save'}</Btn>
+      {msg&&<span style={{fontSize:12,color:msg.startsWith('✓')?C.green:C.red}}>{msg}</span>}
+    </div>
+  </div>;
 }
 
 export default function GatewayManager({token}){

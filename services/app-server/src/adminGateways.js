@@ -61,9 +61,9 @@ router.post('/register', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { label, zone_id, rssi_threshold, connection_type } = req.body;
-    const r = await db.query(`UPDATE ble_gateways SET label=COALESCE($2,label),zone_id=$3,rssi_threshold=COALESCE($4,rssi_threshold),connection_type=COALESCE($5,connection_type),updated_at=NOW() WHERE id=$1 RETURNING *`,
-      [req.params.id, label, zone_id||null, rssi_threshold, connection_type]);
+    const { label, zone_id, rssi_threshold, connection_type, short_id, ip_address } = req.body;
+    const r = await db.query(`UPDATE ble_gateways SET label=COALESCE($2,label),zone_id=$3,rssi_threshold=COALESCE($4,rssi_threshold),connection_type=COALESCE($5,connection_type),short_id=COALESCE($6,short_id),ip_address=COALESCE($7,ip_address),updated_at=NOW() WHERE id=$1 RETURNING *`,
+      [req.params.id, label, zone_id||null, rssi_threshold, connection_type, short_id||null, ip_address||null]);
     if (!r.rows[0]) return res.status(404).json({ error: 'Not found' });
     await db.query(`INSERT INTO audit_log (actor_id,actor_role,action,entity_type,entity_id,new_value) VALUES ($1,$2,'GATEWAY_UPDATED','ble_gateway',$3,$4)`,
       [req.user.id, req.user.role, req.params.id, JSON.stringify(req.body)]);

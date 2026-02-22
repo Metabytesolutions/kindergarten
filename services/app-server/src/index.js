@@ -122,3 +122,6 @@ app.use('/api/sessions', requireAuth, sessionsRouter);
 // ── ADMIN GATEWAY MANAGEMENT ──────────────────────────────────────────────
 const adminGatewaysRouter = require('./adminGateways');
 app.use('/api/admin/gateways', requireAuth, adminGatewaysRouter);
+
+const adminZonesRouter = require('./adminZones');
+app.use('/api/admin/zones', requireAuth, adminZonesRouter);
