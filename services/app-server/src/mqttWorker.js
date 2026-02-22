@@ -1,3 +1,4 @@
+const { onDetection, scheduleMissingAlert } = require('./checkoutTracker');
 const { logEvent } = require('./eventLogger');
 const mqtt = require('mqtt');
 

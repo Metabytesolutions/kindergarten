@@ -24,6 +24,9 @@ const EVENT_META = {
   GATEWAY_OFFLINE:            { cat:'SYSTEM',     sev:'CRITICAL', ack:true  },
   TAG_LOW_BATTERY:            { cat:'SYSTEM',     sev:'WARNING',  ack:false },
   TAG_MISSING:                { cat:'SYSTEM',     sev:'WARNING',  ack:false },
+  CHECKOUT_TRACKING:     { cat:'ATTENDANCE', sev:'INFO',    ack:false },
+  CHECKOUT_ZONE_WARNING: { cat:'VIOLATION',  sev:'WARNING', ack:false },
+  RE_ENTRY_VIOLATION:    { cat:'VIOLATION',  sev:'WARNING', ack:true  },
   // ADMIN
   USER_CREATED:               { cat:'ADMIN',      sev:'INFO',     ack:false },
   TEMP_ZONE_ASSIGNED:         { cat:'ADMIN',      sev:'INFO',     ack:false },

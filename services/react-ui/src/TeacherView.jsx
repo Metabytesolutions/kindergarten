@@ -250,9 +250,9 @@ function StudentRow({student, isOwn, token, onAction}){
     <div style={{flexShrink:0,display:'flex',gap:6}}>
       {sess==='EXPECTED'&&
         <Btn small color={C.green} onClick={()=>onAction('accept',student)}>✓ Accept</Btn>}
-      {sess==='ACCEPTED'&&isMine&&student.transfer_pending_out===0&&
+      {sess==='ACCEPTED'&&isMine&&parseInt(student.transfer_pending_out||0)===0&&
         <Btn small outline color={C.blue} onClick={()=>onAction('transfer',student)}>📤</Btn>}
-      {sess==='ACCEPTED'&&isMine&&student.transfer_pending_out===0&&
+      {sess==='ACCEPTED'&&isMine&&parseInt(student.transfer_pending_out||0)===0&&
         <Btn small outline color={C.orange} onClick={()=>onAction('checkout',student)}>🚪</Btn>}
       {sess==='CHECKOUT_PENDING'&&
         <span style={{fontSize:11,color:C.orange,fontWeight:700}}>Awaiting EXIT...</span>}

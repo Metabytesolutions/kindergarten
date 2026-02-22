@@ -3,6 +3,7 @@
 const express    = require('express');
 const db         = require('./db');
 const { logEvent } = require('./eventLogger');
+const { scheduleMissingAlert } = require('./checkoutTracker');
 const router     = express.Router();
 
 // ── GET /api/session/roster — today's expected students ───────────────────────
@@ -30,11 +31,11 @@ router.get('/roster', async (req, res) => {
         -- Presence
         ps.state      as presence_state,
         -- Pending transfers OUT
-        (SELECT COUNT(*) FROM custody_transfers ct
+        (SELECT COUNT(*)::int FROM custody_transfers ct
          WHERE ct.student_id=s.id AND ct.from_teacher_id=$1
            AND ct.status='PENDING') as transfer_pending_out,
         -- Pending transfers IN
-        (SELECT COUNT(*) FROM custody_transfers ct
+        (SELECT COUNT(*)::int FROM custody_transfers ct
          WHERE ct.student_id=s.id AND ct.to_teacher_id=$1
            AND ct.status='PENDING') as transfer_pending_in
       FROM students s
@@ -168,6 +169,16 @@ router.post('/checkout/:studentId', async (req, res) => {
       DO UPDATE SET status='CHECKOUT_PENDING', checkout_initiated_at=NOW(), checkout_initiated_by=$4
     `, [sid, teacherId, today, teacherId]);
 
+    // Log checkout initiated event
+    await logEvent('STUDENT_CHECKED_OUT', {
+      title: `Checkout initiated: ${student.first_name} ${student.last_name} — watching for EXIT`,
+      detail: { student: `${student.first_name} ${student.last_name}`,
+                initiated_by: req.user.username, timeout_minutes: timeout,
+                status: 'PENDING_EXIT_CONFIRMATION' },
+      studentIds: [sid], actorId: teacherId,
+    }).catch(()=>{});
+    // Schedule CRITICAL alert if student never reaches EXIT
+    scheduleMissingAlert(sid, `${student.first_name} ${student.last_name}`, teacherId, timeout);
     console.log(`🚪 Checkout initiated: ${student.first_name} ${student.last_name} — watching for EXIT zone (${timeout}min timeout)`);
 
     // Schedule timeout alert (fire and forget)
@@ -278,6 +289,24 @@ router.get('/my-alerts', async (req, res) => {
       ORDER BY de.created_at DESC
       LIMIT 30
     `, [req.user.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// GET /api/session/checkout-trail/:studentId
+router.get('/checkout-trail/:studentId', async (req, res) => {
+  try {
+    const r = await db.query(`
+      SELECT ct.detected_at, ct.rssi, ct.zone_type,
+        z.name as zone_name, bg.short_id as gateway_short_id
+      FROM checkout_tracking ct
+      LEFT JOIN zones z  ON z.id=ct.detected_zone_id
+      LEFT JOIN ble_gateways bg ON bg.id=ct.detected_gateway_id
+      WHERE ct.student_id=$1
+        AND ct.detected_at >= NOW() - INTERVAL '24 hours'
+      ORDER BY ct.detected_at ASC
+    `, [req.params.studentId]);
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
