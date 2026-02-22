@@ -1,3 +1,4 @@
+import TagInventory from './TagInventory';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 const EAPI = '/api/events';
@@ -348,6 +349,7 @@ export default function DirectorPortal({token}){
     {id:'events',   label:`📋 Event Log${unacked>0?` 🔴${unacked}`:''}` },
     {id:'classrooms',label:'👩‍🏫 Classrooms'},
     {id:'transfers', label:`🔗 Transfers${transfers.length>0?` (${transfers.length})`:''}`},
+    {id:'tags', label:'🏷️ Tag Inventory'},
   ];
 
   return <div>
@@ -485,6 +487,9 @@ export default function DirectorPortal({token}){
     {/* CLASSROOMS TAB */}
     {!loading&&view==='classrooms'&&
       <ClassroomView teachers={teachers} students={students}/>}
+
+    {/* TAGS TAB */}
+    {!loading&&view==='tags'&&<TagInventory token={token}/>}
 
     {/* TRANSFERS TAB */}
     {!loading&&view==='transfers'&&<div>

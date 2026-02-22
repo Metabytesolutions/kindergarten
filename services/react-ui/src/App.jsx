@@ -206,12 +206,12 @@ export default function App() {
         </div>
       </header>
 
-      {user.role === 'TEACHER' ? <TeacherView token={token}/> : role === '__TEACHER_OLD' && (
+      {user.role === 'TEACHER' && (
         <TeacherView students={students} alerts={alerts} onAck={onAck} token={token} />
       )}
 
       {user.role === 'DIRECTOR' && (
-        <DirectorView students={students} alerts={alerts} onAck={onAck} token={token} gatewayOk={wsStatus === 'connected'} />
+        <DirectorPortal token={token} />
       )}
 
       {user.role === 'IT' && (

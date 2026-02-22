@@ -143,3 +143,6 @@ app.use('/api/director', requireAuth, directorApiRouter);
 
 const teacherSessionRouter = require('./teacherSessionApi');
 app.use('/api/session', requireAuth, teacherSessionRouter);
+
+const tagInventoryRouter = require('./tagInventoryApi');
+app.use('/api/tags', requireAuth, tagInventoryRouter);
