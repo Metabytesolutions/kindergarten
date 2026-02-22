@@ -137,3 +137,6 @@ app.use('/api/custody', requireAuth, custodyRouter);
 
 const directorEventsRouter = require('./directorEvents');
 app.use('/api/events', requireAuth, directorEventsRouter);
+
+const directorApiRouter = require('./directorApi');
+app.use('/api/director', requireAuth, directorApiRouter);

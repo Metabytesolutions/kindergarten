@@ -8,6 +8,7 @@ import ZoneManager from './ZoneManager'
 import UserManager from './UserManager'
 import StudentManager from './StudentManager'
 import CustodyManager from './CustodyManager'
+import DirectorPortal from './DirectorPortal'
 
 function SignalBars({ rssi }) {
   const strength = rssi >= -50 ? 4 : rssi >= -65 ? 3 : rssi >= -75 ? 2 : 1
