@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import SubstituteManager from './SubstituteManager';
 const API  = '/api/custody';
 const UAPI = '/api/admin/users';
 const ZAPI = '/api/admin/zones';
@@ -39,7 +40,7 @@ function TeacherZoneEditor({token, teacher, onSaved, onCancel}){
       // Update teacher primary_zone_id to their PRIMARY zone
       const primary = assigned.find(a=>a.zone_role==='PRIMARY');
       await fetch(`${UAPI}/${teacher.id}`, {method:'PUT', headers:auth(token),
-        body: JSON.stringify({primary_zone_id: primary?.zone_id||null})});
+        body: JSON.stringify({zone_id: primary?.zone_id||null, primary_zone_id: primary?.zone_id||null})});
       // Save teacher zones
       const r = await fetch(`${API}/teacher-zones/${teacher.id}`, {method:'PUT', headers:auth(token),
         body: JSON.stringify({zones: assigned})});
@@ -168,7 +169,7 @@ export default function CustodyManager({token}){
 
     {/* Sub-tabs */}
     <div style={{display:'flex',gap:0,borderBottom:`1px solid ${C.border}`,marginBottom:20}}>
-      {[{id:'teachers',label:'👩‍🏫 Teacher Zones'},{id:'overview',label:'📋 Custody Overview'},{id:'settings',label:'⚙️ Settings'}].map(t=>(
+      {[{id:'teachers',label:'👩‍🏫 Teacher Zones'},{id:'overview',label:'📋 Custody Overview'},{id:'settings',label:'⚙️ Settings'},{id:'coverage',label:'🔄 Coverage'}].map(t=>(
         <div key={t.id} onClick={()=>setView(t.id)} style={{padding:'10px 18px',cursor:'pointer',fontSize:13,fontWeight:700,color:view===t.id?C.blue:C.muted,borderBottom:`2px solid ${view===t.id?C.blue:'transparent'}`,transition:'all 0.15s'}}>{t.label}</div>
       ))}
     </div>
@@ -235,5 +236,6 @@ export default function CustodyManager({token}){
 
     {/* Settings */}
     {view==='settings'&&<SettingsPanel token={token}/>}
+    {view==='coverage'&&<SubstituteManager token={token}/>}
   </div>;
 }

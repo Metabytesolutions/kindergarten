@@ -45,13 +45,13 @@ router.post('/', async (req, res) => {
 // PUT /api/admin/users/:id
 router.put('/:id', async (req, res) => {
   try {
-    const { full_name, email, phone, role, zone_id, is_active } = req.body;
+    const { full_name, email, phone, role, zone_id, primary_zone_id, is_active } = req.body;
     const r = await db.query(
       `UPDATE users SET full_name=COALESCE($2,full_name), email=COALESCE($3,email),
-       phone=$4, role=COALESCE($5,role), zone_id=$6,
-       is_active=COALESCE($7,is_active), updated_at=NOW()
+       phone=$4, role=COALESCE($5,role), zone_id=COALESCE($6,zone_id), primary_zone_id=COALESCE($6,zone_id),
+       is_active=COALESCE($7,is_active), teacher_type=COALESCE($8,teacher_type), updated_at=NOW()
        WHERE id=$1 RETURNING id,username,email,role,full_name,is_active,zone_id`,
-      [req.params.id, full_name, email, phone||null, role, zone_id||null, is_active]
+      [req.params.id, full_name, email, phone||null, role, zone_id||null, is_active, teacher_type||null]
     );
     if (!r.rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(r.rows[0]);

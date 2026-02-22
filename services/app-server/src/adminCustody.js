@@ -236,4 +236,127 @@ router.put('/teacher-zones/:teacherId', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+// ── Substitute / Temporary Zone Management ───────────────────────────────────
+
+// GET /api/custody/teacher-zones-all — all teachers with zones + temp flag
+router.get('/teacher-zones-all', async (req, res) => {
+  try {
+    const r = await db.query(`
+      SELECT
+        u.id, u.username, u.full_name, u.teacher_type,
+        u.role,
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'zone_id',    z.id,
+              'zone_name',  z.name,
+              'zone_type',  z.zone_type,
+              'zone_role',  tz.zone_role,
+              'is_temporary', tz.is_temporary,
+              'assigned_by',  tz.assigned_by,
+              'assigned_at',  tz.assigned_at,
+              'notes',        tz.notes,
+              'assigned_by_name', ab.full_name
+            ) ORDER BY tz.is_temporary, tz.zone_role
+          ) FILTER (WHERE z.id IS NOT NULL),
+          '[]'
+        ) as zones
+      FROM users u
+      LEFT JOIN teacher_zones tz ON tz.teacher_id = u.id
+      LEFT JOIN zones z ON z.id = tz.zone_id
+      LEFT JOIN users ab ON ab.id = tz.assigned_by
+      WHERE u.role IN ('TEACHER','SUBSTITUTE') AND u.is_active = true
+      GROUP BY u.id
+      ORDER BY u.teacher_type, u.full_name
+    `);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/custody/temp-zone — assign a temporary zone to any teacher
+router.post('/temp-zone', async (req, res) => {
+  try {
+    const { teacher_id, zone_id, zone_role, notes } = req.body;
+    if (!teacher_id || !zone_id)
+      return res.status(400).json({ error: 'teacher_id and zone_id required' });
+    if (!['IT','DIRECTOR'].includes(req.user.role))
+      return res.status(403).json({ error: 'IT Admin or Director only' });
+
+    // Check teacher exists
+    const tr = await db.query(
+      'SELECT id, username, full_name FROM users WHERE id=$1 AND role IN ($2,$3)',
+      [teacher_id, 'TEACHER', 'SUBSTITUTE']);
+    if (!tr.rows[0])
+      return res.status(404).json({ error: 'Teacher not found' });
+
+    // Upsert — if already assigned, update to temp
+    await db.query(`
+      INSERT INTO teacher_zones (teacher_id, zone_id, zone_role, is_temporary, assigned_by, assigned_at, notes)
+      VALUES ($1, $2, $3, true, $4, NOW(), $5)
+      ON CONFLICT (teacher_id, zone_id)
+      DO UPDATE SET
+        zone_role    = EXCLUDED.zone_role,
+        is_temporary = true,
+        assigned_by  = EXCLUDED.assigned_by,
+        assigned_at  = NOW(),
+        notes        = EXCLUDED.notes
+    `, [teacher_id, zone_id, zone_role||'PRIMARY', req.user.id, notes||null]);
+
+    await db.query(`
+      INSERT INTO audit_log (actor_id, actor_role, action, entity_type, entity_id, new_value)
+      VALUES ($1, $2, 'TEMP_ZONE_ASSIGNED', 'user', $3, $4)`,
+      [req.user.id, req.user.role, teacher_id,
+       JSON.stringify({zone_id, zone_role, notes})]);
+
+    console.log(`🔄 Temp zone assigned: teacher=${tr.rows[0].username} zone=${zone_id}`);
+    res.json({ success: true, teacher: tr.rows[0] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/custody/temp-zone — remove a temporary zone assignment
+router.delete('/temp-zone', async (req, res) => {
+  try {
+    const { teacher_id, zone_id } = req.body;
+    if (!teacher_id || !zone_id)
+      return res.status(400).json({ error: 'teacher_id and zone_id required' });
+    if (!['IT','DIRECTOR'].includes(req.user.role))
+      return res.status(403).json({ error: 'IT Admin or Director only' });
+
+    const r = await db.query(`
+      DELETE FROM teacher_zones
+      WHERE teacher_id=$1 AND zone_id=$2 AND is_temporary=true
+      RETURNING *`, [teacher_id, zone_id]);
+
+    if (!r.rows[0])
+      return res.status(404).json({ error: 'Temporary zone assignment not found' });
+
+    await db.query(`
+      INSERT INTO audit_log (actor_id, actor_role, action, entity_type, entity_id)
+      VALUES ($1, $2, 'TEMP_ZONE_REMOVED', 'user', $3)`,
+      [req.user.id, req.user.role, teacher_id]);
+
+    console.log(`🗑️  Temp zone removed: teacher=${teacher_id} zone=${zone_id}`);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/custody/teacher-type/:id — toggle PERMANENT / SUBSTITUTE
+router.put('/teacher-type/:id', async (req, res) => {
+  try {
+    const { teacher_type } = req.body;
+    if (!['PERMANENT','SUBSTITUTE'].includes(teacher_type))
+      return res.status(400).json({ error: 'teacher_type must be PERMANENT or SUBSTITUTE' });
+    if (!['IT','DIRECTOR'].includes(req.user.role))
+      return res.status(403).json({ error: 'IT Admin or Director only' });
+
+    const r = await db.query(
+      'UPDATE users SET teacher_type=$2, updated_at=NOW() WHERE id=$1 RETURNING id,username,teacher_type',
+      [req.params.id, teacher_type]);
+    if (!r.rows[0]) return res.status(404).json({ error: 'Not found' });
+
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
