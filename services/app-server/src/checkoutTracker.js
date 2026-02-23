@@ -22,8 +22,8 @@ async function onDetection({ studentId, gatewayId, zoneId, zoneType, rssi }) {
     const name    = `${session.first_name} ${session.last_name}`;
     const isExit  = zoneType === 'EXIT';
 
-    // CASE 1: EXIT while CHECKED IN → EXIT_VIOLATION
-    if (isExit && status === 'ACCEPTED') {
+    // CASE 1: DISABLED — tags stay in classroom, EXIT detection not used
+    if (false && isExit && status === 'ACCEPTED') {
       console.log(`🚨 EXIT_VIOLATION: ${name} at EXIT zone while checked in`);
       await logEvent('EXIT_VIOLATION', {
         title: `EXIT VIOLATION: ${name} at exit — not checked out`,
@@ -39,8 +39,8 @@ async function onDetection({ studentId, gatewayId, zoneId, zoneType, rssi }) {
       return;
     }
 
-    // CASE 2: EXIT while CHECKOUT_PENDING → confirm checkout
-    if (isExit && status === 'CHECKOUT_PENDING') {
+    // CASE 2: DISABLED — checkout confirmed by teacher tap, not EXIT zone
+    if (false && isExit && status === 'CHECKOUT_PENDING') {
       console.log(`✅ Checkout confirmed: ${name} passed EXIT zone`);
       await db.query(`
         UPDATE student_sessions
