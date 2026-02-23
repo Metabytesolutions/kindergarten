@@ -364,6 +364,27 @@ export default function TeacherView({token}){
     return()=>ws.close();
   },[token]);
 
+  const doOpenClass = async () => {
+    try {
+      const r=await fetch('/api/class-session/open',{method:'POST',headers:auth(token)});
+      const d=await r.json();
+      if(d.error){setSessionMsg('❌ '+d.error);return;}
+      setSessionMsg('✅ Class opened');
+      await loadClassSession(); await loadRoster();
+    } catch(e){}
+  };
+  const doCloseClass = async (force=false) => {
+    try {
+      const r=await fetch('/api/class-session/close',
+        {method:'POST',headers:{...auth(token),'Content-Type':'application/json'},
+         body:JSON.stringify({force})});
+      const d=await r.json();
+      if(d.blocked){setCloseBlocked(d);return;}
+      if(d.error){setSessionMsg('❌ '+d.error);return;}
+      setSessionMsg('✅ Class closed'); setCloseBlocked(null);
+      await loadClassSession();
+    } catch(e){}
+  };
   const doMarkAbsent = async (student) => {
     try {
       await fetch(`/api/session/mark-absent/${student.id}`,{method:'POST',headers:auth(token)});

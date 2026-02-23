@@ -255,7 +255,17 @@ export default function DirectorPortal({token}){
   const [overview,   setOverview]   = useState(null);
   const [events,     setEvents]     = useState([]);
   const [evTotal,    setEvTotal]    = useState(0);
-  const [summary,    setSummary]    = useState(null);
+  const [summary,      setSummary]      = useState(null);
+  const loadReport=async(d)=>{
+    try{const r=await fetch(`/api/reports/attendance?date=${d}`,{headers:auth(token)});
+    setReportData(await r.json());}catch(e){}};
+  const loadHealth=async()=>{
+    try{const r=await fetch('/api/reports/health',{headers:auth(token)});
+    setHealthData(await r.json());}catch(e){}};
+  const [classStatuses,setClassStatuses] = useState([]);
+  const [reportDate,   setReportDate]    = useState(new Date().toISOString().split('T')[0]);
+  const [reportData,   setReportData]    = useState(null);
+  const [healthData,   setHealthData]    = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [evLoading,  setEvLoading]  = useState(false);
   const [selEvent,   setSelEvent]   = useState(null);
@@ -277,7 +287,11 @@ export default function DirectorPortal({token}){
 
   const loadSummary = useCallback(async()=>{
     try{
-      const r=await fetch(`${EAPI}/summary`,{headers:auth(token)});
+      const [r,cs]=await Promise.all([
+        fetch(`${EAPI}/summary`,{headers:auth(token)}),
+        fetch('/api/class-session/all-status',{headers:auth(token)}),
+      ]);
+      if(cs.ok){const d=await cs.json();setClassStatuses(d);}
       setSummary(await r.json());
     }catch(e){}
   },[token]);
@@ -488,6 +502,26 @@ export default function DirectorPortal({token}){
     </div>}
 
     {/* CLASSROOMS TAB */}
+    {view==='classrooms'&&classStatuses.length>0&&<div style={{
+      display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',
+      gap:8,marginBottom:16}}>
+      {classStatuses.map(t=><div key={t.teacher_id} style={{
+        background:t.class_status==='OPEN'?`${C.green}11`:
+                   t.class_status==='CLOSED'?`${C.blue}11`:'#1A1A2E',
+        border:`1px solid ${t.class_status==='OPEN'?C.green:
+                            t.class_status==='CLOSED'?C.blue:C.orange}33`,
+        borderRadius:10,padding:'10px',textAlign:'center'}}>
+        <div style={{fontSize:18,marginBottom:4}}>
+          {t.class_status==='OPEN'?'📖':t.class_status==='CLOSED'?'🔒':'⏳'}</div>
+        <div style={{fontSize:12,fontWeight:700,color:'#E4E4E7'}}>{t.teacher_name}</div>
+        <div style={{fontSize:10,color:'#4A5568'}}>{t.zone_name||'No zone'}</div>
+        <div style={{fontSize:10,marginTop:4,
+          color:t.class_status==='OPEN'?C.green:t.class_status==='CLOSED'?C.blue:C.orange}}>
+          {t.class_status||'NOT OPENED'}</div>
+        {t.class_status==='OPEN'&&<div style={{fontSize:10,color:C.green,marginTop:2}}>
+          {t.currently_in}/{t.total_students} in</div>}
+      </div>)}
+    </div>}
     {!loading&&view==='classrooms'&&
       <ClassroomView teachers={teachers} students={students}/>}
 

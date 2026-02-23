@@ -142,6 +142,8 @@ const directorApiRouter = require('./directorApi');
 app.use('/api/director', requireAuth, directorApiRouter);
 
 const teacherSessionRouter = require('./teacherSessionApi');
+app.use('/api/class-session', require('./classSessionApi'));
+app.use('/api/reports',        require('./reportsApi'));
 app.use('/api/session', requireAuth, teacherSessionRouter);
 
 const tagInventoryRouter = require('./tagInventoryApi');

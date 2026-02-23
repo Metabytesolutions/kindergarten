@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import ITAdminReports from './ITAdminReports';
 import TagInventory from './TagInventory';
 import RawDetectionMonitor from './RawDetectionMonitor';
 import SupportButton from './SupportButton';
