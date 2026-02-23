@@ -171,15 +171,15 @@ router.post('/checkout/:studentId', async (req, res) => {
 
     // Log checkout initiated event
     await logEvent('STUDENT_CHECKED_OUT', {
-      title: `Checkout initiated: ${student.first_name} ${student.last_name} — watching for EXIT`,
+      title: `${student.first_name} ${student.last_name} checked out`,
       detail: { student: `${student.first_name} ${student.last_name}`,
-                initiated_by: req.user.username, timeout_minutes: timeout,
-                status: 'PENDING_EXIT_CONFIRMATION' },
+                checked_out_by: req.user.username,
+                status: 'CHECKED_OUT' },
       studentIds: [sid], actorId: teacherId,
     }).catch(()=>{});
     // Schedule CRITICAL alert if student never reaches EXIT
     scheduleMissingAlert(sid, `${student.first_name} ${student.last_name}`, teacherId, timeout);
-    console.log(`🚪 Checkout initiated: ${student.first_name} ${student.last_name} — watching for EXIT zone (${timeout}min timeout)`);
+    console.log(`🚪 ${student.first_name} ${student.last_name} checked out zone (${timeout}min timeout)`);
 
     // Schedule timeout alert (fire and forget)
     setTimeout(async () => {

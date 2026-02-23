@@ -255,7 +255,7 @@ function StudentRow({student, isOwn, token, onAction}){
       {sess==='ACCEPTED'&&isMine&&parseInt(student.transfer_pending_out||0)===0&&
         <Btn small outline color={C.orange} onClick={()=>onAction('checkout',student)}>🚪</Btn>}
       {sess==='CHECKOUT_PENDING'&&
-        <span style={{fontSize:11,color:C.orange,fontWeight:700}}>Awaiting EXIT...</span>}
+        <span style={{fontSize:11,color:C.orange,fontWeight:700}}>Checked Out ✅</span>}
     </div>
   </div>;
 }
