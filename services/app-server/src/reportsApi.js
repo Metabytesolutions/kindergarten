@@ -2,12 +2,12 @@
 const express  = require('express');
 const router   = express.Router();
 const db       = require('./db');
-const { authMiddleware, requireRole } = require('./auth');
+const { requireAuth, requireRole } = require('./auth');
 const { logEvent } = require('./eventLogger');
 const { runHealthCheck, getHealthSummary } = require('./systemMonitor');
 const { runEOD } = require('./eodService');
 
-router.use(authMiddleware);
+router.use(requireAuth);
 
 // GET /api/reports/attendance?date=YYYY-MM-DD
 router.get('/attendance', async (req, res) => {

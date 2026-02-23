@@ -2,10 +2,10 @@
 const express  = require('express');
 const router   = express.Router();
 const db       = require('./db');
-const { authMiddleware, requireRole } = require('./auth');
+const { requireAuth, requireRole } = require('./auth');
 const { logEvent } = require('./eventLogger');
 
-router.use(authMiddleware);
+router.use(requireAuth);
 
 // GET /api/class-session/status — my session for today
 router.get('/status', async (req, res) => {
