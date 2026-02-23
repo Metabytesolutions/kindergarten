@@ -108,7 +108,7 @@ router.get('/health', async (req, res) => {
 });
 
 // POST /api/reports/health/check — manual health check
-router.post('/health/check', requireRole(['IT']), async (req, res) => {
+router.post('/health/check', requireRole('IT','IT_ADMIN','DIRECTOR'), async (req, res) => {
   try {
     const results = await runHealthCheck();
     res.json({ results });
@@ -116,7 +116,7 @@ router.post('/health/check', requireRole(['IT']), async (req, res) => {
 });
 
 // POST /api/reports/eod/trigger — manual EOD (IT Admin)
-router.post('/eod/trigger', requireRole(['IT']), async (req, res) => {
+router.post('/eod/trigger', requireRole('IT','IT_ADMIN','DIRECTOR'), async (req, res) => {
   try {
     const result = await runEOD('MANUAL_TRIGGER');
     res.json(result);
@@ -124,7 +124,7 @@ router.post('/eod/trigger', requireRole(['IT']), async (req, res) => {
 });
 
 // GET /api/reports/schedules — list scheduled reports
-router.get('/schedules', requireRole(['IT']), async (req, res) => {
+router.get('/schedules', requireRole('IT','IT_ADMIN','DIRECTOR'), async (req, res) => {
   try {
     const r = await db.query(
       'SELECT * FROM report_schedules ORDER BY created_at DESC');
@@ -133,7 +133,7 @@ router.get('/schedules', requireRole(['IT']), async (req, res) => {
 });
 
 // POST /api/reports/schedules — create scheduled report
-router.post('/schedules', requireRole(['IT']), async (req, res) => {
+router.post('/schedules', requireRole('IT','IT_ADMIN','DIRECTOR'), async (req, res) => {
   try {
     const { name, report_type, schedule, recipients, params } = req.body;
     const r = await db.query(`
@@ -147,7 +147,7 @@ router.post('/schedules', requireRole(['IT']), async (req, res) => {
 });
 
 // PUT /api/reports/schedules/:id — update schedule
-router.put('/schedules/:id', requireRole(['IT']), async (req, res) => {
+router.put('/schedules/:id', requireRole('IT','IT_ADMIN','DIRECTOR'), async (req, res) => {
   try {
     const { is_active } = req.body;
     const r = await db.query(
@@ -173,7 +173,7 @@ router.get('/available-dates', async (req, res) => {
 });
 
 // POST /api/admin/students/:id/remove — director removes student
-router.post('/student-remove/:id', requireRole(['IT','DIRECTOR']), async (req, res) => {
+router.post('/student-remove/:id', requireRole('IT','IT_ADMIN','DIRECTOR'), async (req, res) => {
   try {
     const sid    = req.params.id;
     const { reason } = req.body;
