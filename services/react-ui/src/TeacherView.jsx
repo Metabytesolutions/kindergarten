@@ -191,6 +191,8 @@ function StudentRow({student, isOwn, token, onAction}){
 
   const statusConfig={
     EXPECTED:         {color:'#4A5568', label:'Expected',         bg:'#1A1A2E'},
+    ABSENT:           {color:'#4A5568', label:'Absent',           bg:'#0D0D0D'},
+    ABSENT:           {color:'#4A5568', label:'Absent',           bg:'#0D0D0D'},
     ACCEPTED:         {color:C.green,   label:'Present',          bg:`${C.green}0D`},
     CHECKOUT_PENDING: {color:C.orange,  label:'Checkout Pending', bg:`${C.orange}0D`},
     CHECKED_OUT:      {color:'#374151', label:'Checked Out',      bg:'transparent'},
@@ -211,7 +213,8 @@ function StudentRow({student, isOwn, token, onAction}){
 
   return <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',
     borderRadius:10,background:sc.bg,
-    border:`1.5px solid ${sess==='EXPECTED'?C.border:sc.color+'44'}`,
+    border:`1.5px solid ${sess==='ABSENT'?'#2A2A2A':sess==='EXPECTED'?C.border:sc.color+'44'}`,
+    opacity:sess==='ABSENT'?0.5:1,
     opacity:sess==='CHECKED_OUT'?0.5:1,marginBottom:6}}>
 
     {/* Presence dot */}
@@ -248,8 +251,12 @@ function StudentRow({student, isOwn, token, onAction}){
 
     {/* Actions */}
     <div style={{flexShrink:0,display:'flex',gap:6}}>
-      {sess==='EXPECTED'&&
-        <Btn small color={C.green} onClick={()=>onAction('accept',student)}>✓ Accept</Btn>}
+      {sess==='EXPECTED'&&<>
+        <Btn small color={C.green} onClick={()=>onAction('accept',student)}>✓ Accept</Btn>
+        <Btn small color='#4A5568' onClick={()=>onAction('mark-absent',student)}>✗ Absent</Btn>
+      </>}
+      {sess==='ABSENT'&&
+        <Btn small color={C.orange} onClick={()=>onAction('undo-absent',student)}>↩ Undo</Btn>}
       {sess==='ACCEPTED'&&isMine&&parseInt(student.transfer_pending_out||0)===0&&
         <Btn small outline color={C.blue} onClick={()=>onAction('transfer',student)}>📤</Btn>}
       {sess==='ACCEPTED'&&isMine&&parseInt(student.transfer_pending_out||0)===0&&
@@ -359,6 +366,38 @@ export default function TeacherView({token}){
     return()=>ws.close();
   },[token]);
 
+  const doMarkAbsent=async(student)=>{
+    try{
+      await fetch(`/api/session/mark-absent/${student.id}`,{
+        method:'POST', headers:auth(token)});
+      await loadRoster();
+    }catch(e){ console.error(e); }
+  };
+
+  const doUndoAbsent=async(student)=>{
+    try{
+      await fetch(`/api/session/undo-absent/${student.id}`,{
+        method:'POST', headers:auth(token)});
+      await loadRoster();
+    }catch(e){ console.error(e); }
+  };
+
+  const doMarkAbsent=async(student)=>{
+    try{
+      await fetch(`/api/session/mark-absent/${student.id}`,{
+        method:'POST', headers:auth(token)});
+      await loadRoster();
+    }catch(e){ console.error(e); }
+  };
+
+  const doUndoAbsent=async(student)=>{
+    try{
+      await fetch(`/api/session/undo-absent/${student.id}`,{
+        method:'POST', headers:auth(token)});
+      await loadRoster();
+    }catch(e){ console.error(e); }
+  };
+
   const doAccept=async(student)=>{
     setActing(student.id);setMsg('');
     try{
@@ -387,7 +426,9 @@ export default function TeacherView({token}){
   };
 
   const handleAction=(action,student)=>{
-    if(action==='accept')   doAccept(student);
+    if(action==='accept')      doAccept(student);
+    if(action==='mark-absent') doMarkAbsent(student);
+    if(action==='undo-absent') doUndoAbsent(student);
     if(action==='checkout') doCheckout(student);
     if(action==='transfer') setTransfer(student);
   };
@@ -399,7 +440,7 @@ export default function TeacherView({token}){
   const teacher    = data?.teacher||{};
   const students   = data?.students||[];
   const summary    = data?.summary||{};
-  const myStudents = students.filter(s=>s.current_teacher_id===teacher.id||s.session_status==='EXPECTED');
+  const myStudents = students.filter(s=>s.current_teacher_id===teacher.id||s.session_status==='EXPECTED'||s.session_status==='ABSENT');
   const elsewhere  = students.filter(s=>s.current_teacher_id!==teacher.id&&s.session_status==='ACCEPTED');
   const critAlerts = alerts.filter(a=>a.severity==='CRITICAL'&&!a.acked_at).length;
 
@@ -463,6 +504,28 @@ export default function TeacherView({token}){
             token={token} onAction={handleAction}/>)}
 
         {/* Expected (not yet accepted) */}
+        {myStudents.filter(s=>s.session_status==='ABSENT').length>0&&<>
+          <div style={{fontSize:11,fontWeight:700,color:'#4A5568',
+            textTransform:'uppercase',letterSpacing:'0.1em',
+            padding:'8px 0 4px',marginTop:8}}>
+            ⚫ Absent ({myStudents.filter(s=>s.session_status==='ABSENT').length})
+          </div>
+          {myStudents.filter(s=>s.session_status==='ABSENT')
+            .map(s=><StudentRow key={s.id} student={s} onAction={onAction}
+              teacher={teacher}/>)}
+        </>}
+
+        {myStudents.filter(s=>s.session_status==='ABSENT').length>0&&<>
+          <div style={{fontSize:11,fontWeight:700,color:'#4A5568',
+            textTransform:'uppercase',letterSpacing:'0.1em',
+            padding:'8px 0 4px',marginTop:8}}>
+            ⚫ Absent ({myStudents.filter(s=>s.session_status==='ABSENT').length})
+          </div>
+          {myStudents.filter(s=>s.session_status==='ABSENT')
+            .map(s=><StudentRow key={s.id} student={s} onAction={onAction}
+              teacher={teacher}/>)}
+        </>}
+
         {myStudents.filter(s=>s.session_status==='EXPECTED').length>0&&<>
           <div style={{fontSize:12,fontWeight:700,color:C.yellow,textTransform:'uppercase',
             letterSpacing:'0.06em',margin:'16px 0 10px'}}>

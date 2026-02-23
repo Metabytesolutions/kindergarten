@@ -311,4 +311,51 @@ router.get('/checkout-trail/:studentId', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+// POST /api/session/mark-absent/:studentId
+router.post('/mark-absent/:studentId', async (req, res) => {
+  try {
+    const sid       = req.params.studentId;
+    const teacherId = req.user.id;
+    const today     = new Date().toISOString().split('T')[0];
+
+    const sv = await db.query(
+      'SELECT s.first_name, s.last_name FROM students s WHERE s.id=$1', [sid]);
+    if (!sv.rows[0]) return res.status(404).json({ error: 'Student not found' });
+    const name = sv.rows[0].first_name + ' ' + sv.rows[0].last_name;
+
+    await db.query(`
+      INSERT INTO student_sessions
+        (student_id, home_teacher_id, batch_date, status)
+      VALUES ($1,$2,$3,'ABSENT')
+      ON CONFLICT (student_id, batch_date)
+      DO UPDATE SET status='ABSENT'
+    `, [sid, teacherId, today]);
+
+    await logEvent('STUDENT_ABSENT', {
+      title: `${name} marked absent by ${req.user.username}`,
+      detail: { student: name, marked_by: req.user.username },
+      studentIds: [sid], actorId: teacherId,
+    }).catch(()=>{});
+
+    console.log(`⚫ ${name} marked absent by ${req.user.username}`);
+    res.json({ success: true, status: 'ABSENT' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/session/undo-absent/:studentId
+router.post('/undo-absent/:studentId', async (req, res) => {
+  try {
+    const sid   = req.params.studentId;
+    const today = new Date().toISOString().split('T')[0];
+
+    await db.query(`
+      UPDATE student_sessions SET status='EXPECTED'
+      WHERE student_id=$1 AND batch_date=$2 AND status='ABSENT'
+    `, [sid, today]);
+
+    res.json({ success: true, status: 'EXPECTED' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

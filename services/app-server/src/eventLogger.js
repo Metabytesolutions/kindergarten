@@ -27,6 +27,7 @@ const EVENT_META = {
   CHECKOUT_TRACKING:     { cat:'ATTENDANCE', sev:'INFO',    ack:false },
   CHECKOUT_ZONE_WARNING: { cat:'VIOLATION',  sev:'WARNING', ack:false },
   RE_ENTRY_VIOLATION:    { cat:'VIOLATION',  sev:'WARNING', ack:true  },
+  STUDENT_ABSENT:    { cat:'ATTENDANCE', sev:'INFO',    ack:false },
   MORNING_REMINDER: { cat:'ATTENDANCE', sev:'WARNING', ack:false },
   // ADMIN
   USER_CREATED:               { cat:'ADMIN',      sev:'INFO',     ack:false },
