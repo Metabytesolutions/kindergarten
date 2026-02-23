@@ -40,17 +40,14 @@ router.get('/inventory', async (req, res) => {
         END as battery_pct
       FROM ble_tags bt
       LEFT JOIN students s ON s.id=bt.student_id
-      LEFT JOIN users u ON u.id=(
-        SELECT ct.current_teacher_id FROM student_custody ct
-        WHERE ct.student_id=bt.student_id LIMIT 1
-      )
+      LEFT JOIN users u ON (bt.assigned_to='TEACHER' AND u.full_name=bt.label)
       LEFT JOIN (
         SELECT DISTINCT ON (tag_mac) tag_mac, gateway_id
         FROM detections ORDER BY tag_mac, detected_at DESC
       ) ld ON ld.tag_mac=bt.mac_address
       LEFT JOIN ble_gateways bg ON bg.id=ld.gateway_id
       LEFT JOIN zones z ON z.id=bg.zone_id
-      WHERE bt.battery_mv IS NOT NULL
+      WHERE (bt.battery_mv IS NOT NULL OR bt.status='ASSIGNED')
       ORDER BY
         CASE bt.status WHEN 'ASSIGNED' THEN 0 ELSE 1 END,
         bt.last_seen_at DESC NULLS LAST

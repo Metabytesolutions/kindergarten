@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
+import TagInventory from './TagInventory';
+import RawDetectionMonitor from './RawDetectionMonitor';
+import SupportButton from './SupportButton';
 import Login from './Login'
 import AlertPanel from './AlertPanel'
 import TeacherView from './TeacherView'
@@ -217,7 +220,7 @@ export default function App() {
       {user.role === 'IT' && (
         <div>
           <div style={{ display:'flex', gap:0, borderBottom:'1px solid rgba(255,255,255,0.06)', padding:'0 24px' }}>
-            {[{id:'dashboard',label:'📊 Dashboard'},{id:'gateways',label:'📡 Gateways'},{id:'zones',label:'🏫 Zones'},{id:'users',label:'👥 Users'},{id:'students',label:'👶 Students'},{id:'custody',label:'🔗 Custody'}].map(t=>(
+            {[{id:'dashboard',label:'📊 Dashboard'},{id:'gateways',label:'📡 Gateways'},{id:'zones',label:'🏫 Zones'},{id:'users',label:'👥 Users'},{id:'students',label:'👶 Students'},{id:'custody',label:'🔗 Custody'},{id:'tags',label:'🏷️ Tags'},{id:'detections',label:'📡 Detections'}].map(t=>(
               <div key={t.id} onClick={()=>setItTab(t.id)} style={{
                 padding:'12px 20px', cursor:'pointer', fontSize:13, fontWeight:700,
                 color: itTab===t.id ? '#2E86AB' : '#8899AA',
@@ -231,6 +234,8 @@ export default function App() {
           {itTab==='users' && <div style={{padding:24}}><UserManager token={token}/></div>}
           {itTab==='students' && <div style={{padding:24}}><StudentManager token={token}/></div>}
           {itTab==='custody' && <div style={{padding:24}}><CustodyManager token={token}/></div>}
+          {itTab==='tags' && <div style={{padding:24}}><TagInventory token={token}/></div>}
+          {itTab==='detections' && <div style={{padding:24}}><RawDetectionMonitor token={token}/></div>}
           {itTab==='dashboard' && <div>
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             {[
