@@ -77,7 +77,7 @@ router.get('/overview', async (req,res)=>{
     res.json({
       summary: {
         total:    students.rows.length,
-        absent:   students.rows.filter(s=>s.session_status==='ABSENT').length,
+        absent:   (await db.query("SELECT COUNT(*)::int as c FROM student_sessions WHERE batch_date=CURRENT_DATE AND status='ABSENT'")).rows[0]?.c||0,
         present:  states.filter(s=>['CONFIRMED_PRESENT','PROBABLE_PRESENT'].includes(s)).length,
         roaming:  states.filter(s=>s==='ROAMING').length,
         missing:  states.filter(s=>['MISSING','UNKNOWN'].includes(s)).length,
@@ -98,14 +98,12 @@ router.get('/student/:id', async(req,res)=>{
       db.query(`
         SELECT s.*, u.full_name as teacher_name, z.name as zone_name,
           t.mac_address as tag_mac, t.battery_mv, t.last_seen_at, t.last_rssi,
-          ps.state as presence_state,
-          ss.status as session_status
+          ps.state as presence_state
         FROM students s
         LEFT JOIN users u ON u.id=s.teacher_id
         LEFT JOIN zones z ON z.id=s.zone_id
         LEFT JOIN ble_tags t ON t.student_id=s.id AND t.is_active=true
         LEFT JOIN presence_states ps ON ps.student_id=s.id
-        LEFT JOIN student_sessions ss ON ss.student_id=s.id AND ss.batch_date=CURRENT_DATE
         WHERE s.id=$1`, [req.params.id]),
       db.query(`
         SELECT sc.*, u.full_name as teacher_name, z.name as zone_name

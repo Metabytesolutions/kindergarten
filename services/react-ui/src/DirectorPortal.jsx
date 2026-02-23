@@ -13,7 +13,7 @@ const SEV_COLOR  ={CRITICAL:C.red,WARNING:C.orange,INFO:C.green};
 const SEV_ICON   ={CRITICAL:'🚨',WARNING:'🟠',INFO:'🟢'};
 const CAT_ICON   ={CUSTODY:'🔗',ATTENDANCE:'📋',VIOLATION:'⛔',SYSTEM:'⚙️',ADMIN:'👤'};
 const STATE_COLOR={CONFIRMED_PRESENT:C.green,PROBABLE_PRESENT:C.yellow,
-  ROAMING:C.blue,MISSING:C.red,UNKNOWN:'#4A5568',EXIT_CONFIRMED:C.red};
+  ROAMING:C.blue,MISSING:C.red,UNKNOWN:'#4A5568',EXIT_CONFIRMED:C.red,ABSENT:'#4A5568'};
 
 function fmt(ts){
   if(!ts) return '—';
@@ -398,7 +398,7 @@ export default function DirectorPortal({token}){
           const state=s.presence_state||'UNKNOWN';
           const sc=STATE_COLOR[state]||'#4A5568';
           const isMissing=state==='MISSING'||state==='EXIT_CONFIRMED';
-          return <div key={s.id} style={{background:C.dark,
+          return <div key={s.id} style={{
             border:`1.5px solid ${isMissing?C.red:C.border}`,
             borderRadius:10,padding:12,
             background:isMissing?`${C.red}0D`:C.dark}}>
