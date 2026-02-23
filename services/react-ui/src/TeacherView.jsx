@@ -489,7 +489,7 @@ export default function TeacherView({token}){
             ⚫ Absent ({myStudents.filter(s=>s.session_status==='ABSENT').length})
           </div>
           {myStudents.filter(s=>s.session_status==='ABSENT')
-            .map(s=><StudentRow key={s.id} student={s} onAction={onAction} teacher={teacher}/>)}
+            .map(s=><StudentRow key={s.id} student={s} isOwn={true} token={token} onAction={handleAction}/>)}
         </>}
         {myStudents.filter(s=>s.session_status==='EXPECTED').length>0&&<>
           <div style={{fontSize:12,fontWeight:700,color:C.yellow,textTransform:'uppercase',
