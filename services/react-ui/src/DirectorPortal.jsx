@@ -48,6 +48,7 @@ function Btn({onClick,children,color=C.blue,disabled,small,outline}){
 function SummaryBar({summary, unacked}){
   const stats=[
     {label:'PRESENT', value:summary?.present||0, color:C.green},
+    {label:'ABSENT',  value:summary?.absent||0,  color:'#4A5568'},
     {label:'ROAMING', value:summary?.roaming||0, color:C.blue},
     {label:'MISSING', value:summary?.missing||0, color:C.red},
     {label:'TOTAL',   value:summary?.total||0,   color:'#E4E4E7'},
