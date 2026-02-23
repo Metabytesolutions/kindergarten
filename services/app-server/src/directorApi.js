@@ -74,8 +74,17 @@ router.get('/overview', async (req,res)=>{
     // Summary counts
     const states = students.rows.map(s=>s.presence_state||'UNKNOWN');
     res.json({
+      // Get absent count from sessions
+      const absentR = await db.query(`
+        SELECT COUNT(*)::int as absent
+        FROM student_sessions
+        WHERE batch_date=CURRENT_DATE AND status='ABSENT'
+      `);
+      const absentCount = absentR.rows[0]?.absent || 0;
+
       summary: {
         total:    students.rows.length,
+        absent:  absentCount,
         present:  states.filter(s=>['CONFIRMED_PRESENT','PROBABLE_PRESENT'].includes(s)).length,
         roaming:  states.filter(s=>s==='ROAMING').length,
         missing:  states.filter(s=>['MISSING','UNKNOWN'].includes(s)).length,

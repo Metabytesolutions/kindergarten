@@ -13,7 +13,7 @@ const SEV_COLOR  ={CRITICAL:C.red,WARNING:C.orange,INFO:C.green};
 const SEV_ICON   ={CRITICAL:'🚨',WARNING:'🟠',INFO:'🟢'};
 const CAT_ICON   ={CUSTODY:'🔗',ATTENDANCE:'📋',VIOLATION:'⛔',SYSTEM:'⚙️',ADMIN:'👤'};
 const STATE_COLOR={CONFIRMED_PRESENT:C.green,PROBABLE_PRESENT:C.yellow,
-  ROAMING:C.blue,MISSING:C.red,UNKNOWN:'#4A5568',EXIT_CONFIRMED:C.red};
+  ROAMING:C.blue,MISSING:C.red,UNKNOWN:'#4A5568',EXIT_CONFIRMED:C.red,ABSENT:'#4A5568'};
 
 function fmt(ts){
   if(!ts) return '—';
@@ -47,16 +47,17 @@ function Btn({onClick,children,color=C.blue,disabled,small,outline}){
 // ── SUMMARY BAR ──────────────────────────────────────────────────────────────
 function SummaryBar({summary, unacked}){
   const stats=[
-    {label:'PRESENT', value:summary?.present||0, color:C.green},
-    {label:'ROAMING', value:summary?.roaming||0, color:C.blue},
-    {label:'MISSING', value:summary?.missing||0, color:C.red},
-    {label:'TOTAL',   value:summary?.total||0,   color:'#E4E4E7'},
-    {label:'TEACHERS',value:summary?.teachers||0,color:C.purple},
+    {label:'PRESENT', value:summary?.present||0,  color:C.green},
+    {label:'ABSENT',  value:summary?.absent||0,   color:'#4A5568'},
+    {label:'MISSING', value:summary?.missing||0,  color:C.red},
+    {label:'ROAMING', value:summary?.roaming||0,  color:C.blue},
+    {label:'TOTAL',   value:summary?.total||0,    color:'#E4E4E7'},
+    {label:'TEACHERS',value:summary?.teachers||0, color:C.purple},
     {label:'PENDING TRANSFERS',value:summary?.pending_transfers||0,color:C.orange},
     {label:'UNACKED CRITICAL',value:unacked||0,  color:C.red},
   ];
   return <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:10,marginBottom:20}}>
-    {stats.map(s=><div key={s.label} style={{background:C.card,border:`1px solid ${s.value>0&&s.label!=='TOTAL'&&s.label!=='TEACHERS'?s.color:C.border}`,
+    {stats.map(s=><div key={s.label} style={{background:s.label==='ABSENT'&&s.value>0?'#1A1A1A':C.card,border:`1px solid ${s.value>0&&s.label!=='TOTAL'&&s.label!=='TEACHERS'?s.color:C.border}`,
       borderRadius:12,padding:'12px 8px',textAlign:'center'}}>
       <div style={{fontSize:26,fontWeight:800,color:s.color}}>{s.value}</div>
       <div style={{fontSize:10,color:C.muted,fontWeight:600,textTransform:'uppercase',
@@ -233,7 +234,8 @@ function ClassroomView({teachers, students}){
             return <div key={s.id} style={{display:'flex',alignItems:'center',gap:8,
               padding:'5px 8px',borderRadius:7,
               background:state==='MISSING'||state==='EXIT_CONFIRMED'?`${C.red}11`:'transparent',
-              border:`1px solid ${state==='MISSING'?C.red:C.border}`}}>
+              border:`1px solid ${state==='MISSING'?C.red:state==='ABSENT'?'#2A2A2A':C.border}`,
+              opacity:state==='ABSENT'?0.5:1}}>
               <div style={{width:8,height:8,borderRadius:'50%',background:sc,flexShrink:0}}/>
               <div style={{flex:1,fontSize:12,color:'#E4E4E7',fontWeight:600}}>
                 {s.first_name} {s.last_name}
