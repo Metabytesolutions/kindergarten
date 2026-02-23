@@ -47,7 +47,7 @@ router.get('/inventory', async (req, res) => {
       ) ld ON ld.tag_mac=bt.mac_address
       LEFT JOIN ble_gateways bg ON bg.id=ld.gateway_id
       LEFT JOIN zones z ON z.id=bg.zone_id
-      WHERE (bt.battery_mv IS NOT NULL OR bt.status='ASSIGNED')
+      WHERE bt.mac_address LIKE 'BC5729%'
       ORDER BY
         CASE bt.status WHEN 'ASSIGNED' THEN 0 ELSE 1 END,
         bt.last_seen_at DESC NULLS LAST
